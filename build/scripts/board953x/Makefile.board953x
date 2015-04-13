@@ -219,6 +219,9 @@ cgi: ath_tools_clean
 art_mod:
 	@echo Making ART Module
 	cd ../apps/art && make -f makefile.artmod clean && \
+	make -f makefile.artmod honeybee_pci
+	cp ../apps/art/modules/art.ko $(MODULEPATH)/art-honeybee_pci.ko
+	cd ../apps/art && make -f makefile.artmod clean && \
 	make -f makefile.artmod honeybee
 	cp ../apps/art/modules/art.ko $(MODULEPATH)/art-honeybee.ko
 

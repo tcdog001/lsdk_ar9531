@@ -202,7 +202,7 @@ $(error "Must specify BUSYBOX value")
 endif
 
 ifndef TFTPPATH
-export TFTPPATH=/tftpboot/$(shell whoami)
+export TFTPPATH=$(TOPDIR)/tftpboot
 endif
 
 ifndef  BUILD_OPTIMIZED

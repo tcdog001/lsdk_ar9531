@@ -43,7 +43,7 @@ COBJS	= main.o circbuf.o \
 	  cmd_reginfo.o cmd_spi.o \
 	  command.o console.o devices.o dlmalloc.o docecc.o \
 	  environment.o env_common.o \
-	  env_nowhere.o \
+	  env_flash.o \
 	  exports.o \
 	  hush.o lcd.o lists.o \
 	  memsize.o miiphybb.o miiphyutil.o \
@@ -84,9 +84,16 @@ ifeq ($(VXWORKS_UBOOT),1)
 COBJS	+=  cmd_elf.o
 endif
 
+#zhangsiyu add for partool
+COBJS+=	autelan-lib/src/partool/partool.o \
+	autelan-app/src/partool/partool.o
+
+#zhangsiyu add end
+
 OBJS	= $(AOBJS) $(COBJS)
 
 CPPFLAGS += -I..
+CFLAGS+=-I../include/ -Iautelan-lib/src/ -D__BOOT__ -D__AKID_DEBUG=__partool_debug -DPART_XOR=0
 
 ifeq ($(DUAL_FIRMWAREIMAGE_SUPPORT),1)
 CFLAGS += -DCONFIG_DUALIMAGE_SUPPORT

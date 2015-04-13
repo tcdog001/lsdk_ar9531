@@ -27,7 +27,8 @@ LIB	= lib$(ARCH).a
 
 AOBJS	=
 
-COBJS	= board.o time.o mips_linux.o
+COBJS	= board.o time.o mips_linux.o ddr_test.o upgrade.o
+
 
 OBJS	= $(AOBJS) $(COBJS)
 

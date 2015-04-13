@@ -38,6 +38,12 @@
 
 #include <post.h>
 
+/*zhangsiyu add watchdog function in u-boot 2014-9-22*/	
+#include "ar7240_soc.h"
+#include <asm/addrspace.h>
+/*zhangsiyu add end*/
+
+
 #ifdef CONFIG_SILENT_CONSOLE
 DECLARE_GLOBAL_DATA_PTR;
 #endif
@@ -266,6 +272,15 @@ static __inline__ int abortboot(int bootdelay)
 # else
 				(void) getc();  /* consume input	*/
 # endif
+    /*zhangsiyu add watchdog function in u-boot 2014-9-22*/    
+    //disable watchdog, when  we got a key press 
+                char *s;  
+                if ((s = getenv ("disable_watchdog")) == NULL){
+                    //puts ("disable watchdog\n");
+                    ar7240_reg_wr(AR7240_WATCHDOG_TMR_CONTROL, 0);
+                 }   
+    /*zhangsiyu add end*/
+
 				break;
 			}
 			udelay (10000);

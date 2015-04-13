@@ -452,7 +452,7 @@ int flash_sect_erase (ulong addr_first, ulong addr_last)
 	return rcode;
 }
 
-#ifndef COMPRESSED_UBOOT
+//#ifndef COMPRESSED_UBOOT
 int do_protect (cmd_tbl_t *cmdtp, int flag, int argc, char *argv[])
 {
 	flash_info_t *info;
@@ -682,7 +682,7 @@ int flash_sect_protect (int p, ulong addr_first, ulong addr_last)
 	}
 	return rcode;
 }
-#endif /* #ifndef COMPRESSED_UBOOT */
+//#endif /* #ifndef COMPRESSED_UBOOT */
 
 /**************************************************/
 #if (CONFIG_COMMANDS & CFG_CMD_JFFS2) && defined(CONFIG_JFFS2_CMDLINE)

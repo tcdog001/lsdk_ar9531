@@ -278,6 +278,7 @@ NetLoop(proto_t protocol)
 #endif
 
 #ifdef CONFIG_NET_MULTI
+	char *s;
 	NetRestarted = 0;
 	NetDevExists = 0;
 #endif
@@ -328,7 +329,9 @@ NetLoop(proto_t protocol)
 	 */
 	setenv("ethact", "eth1");
 #else
+	if ((s = getenv ("ethact")) == NULL) {
         setenv("ethact", "eth0");
+	}
 #endif
 	eth_set_current();
 #endif

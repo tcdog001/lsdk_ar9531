@@ -300,9 +300,25 @@
 						CFG_CMD_FLASH		\
 						))
 #	else
-#		define ATH_CFG_COMMANDS		(CONFIG_CMD_DFL	|	\
+#		define ATH_CFG_COMMANDS		((CONFIG_CMD_DFL	|	\
+				CFG_CMD_DHCP	|	\
+				CFG_CMD_ELF	|	\
+				CFG_CMD_PCI	|	\
+				CFG_CMD_FLS	|	\
 				CFG_CMD_PING	|	\
-				CFG_CMD_NET)
+				CFG_CMD_NET	|	\
+				CFG_CMD_MII	|	\
+				CFG_CMD_ENV	|	\
+				CFG_CMD_PLL	|	\
+				CFG_CMD_FLASH	|	\
+				CFG_CMD_RUN	|	\
+				CFG_CMD_ELF	|	\
+				CFG_CMD_DDR	|	\
+				CFG_CMD_ETHREG		\
+				) & ~(			\
+				CFG_CMD_IMLS	|	\
+				CFG_CMD_FLASH		\
+				))
 #	endif
 #endif /* #ifndef COMPRESSED_UBOOT */
 
@@ -328,9 +344,11 @@
 #define DEBUG
 
 #ifdef COMPRESSED_UBOOT
-#undef  CFG_ENV_IS_IN_FLASH
+//#undef  CFG_ENV_IS_IN_FLASH
 #undef  CFG_ENV_IS_IN_NAND
-#define CFG_ENV_IS_NOWHERE		1
+//#define CFG_ENV_IS_NOWHERE		1
+#undef CFG_ENV_IS_NOWHERE
+#define  CFG_ENV_IS_IN_FLASH		1
 #endif
 
 #define CONFIG_COMMANDS			(ATH_CFG_COMMANDS | ATH_EXTRA_CMD)

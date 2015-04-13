@@ -30,6 +30,13 @@
 #include <version.h>
 #include <net.h>
 #include <environment.h>
+#include "upgrade.h"
+
+/*zhangsiyu add watchdog function in u-boot 2014-9-22*/	
+//depict: about 30s will reset u-boot if without any opreration,for occationally hung on while u-boot init the network driver.
+#include "ar7240_soc.h"
+#include <asm/addrspace.h>
+/*zhangsiyu add end*/
 
 DECLARE_GLOBAL_DATA_PTR;
 
@@ -218,6 +225,9 @@ void board_init_f(ulong bootflag)
 			hang ();
 		}
 	}
+    /*Begin:liuhj add for kes 2013-03-21 */
+	gd->ram_size -= 0x200000; 	  	 
+    /*End:   liuhj add for kes 2013-03-21 */
 
 #ifdef COMPRESSED_UBOOT
         checkboard(board_string);
@@ -226,6 +236,10 @@ void board_init_f(ulong bootflag)
 	puts ("DRAM:  ");
 	print_size (gd->ram_size, "\n");
 #endif
+       
+        /*added by limiao for ddr test 2012-12-11*/
+        ddr_test();
+        /*added end*/
 
 	/*
 	 * Now that we have DRAM mapped and working, we can
@@ -447,6 +461,15 @@ void board_init_r (gd_t *id, ulong dest_addr)
 	misc_init_r ();
 #endif
 
+/*zhangsiyu add watchdog function in u-boot 2014-9-22*/	
+//depict: about 30s will reset u-boot if without any opreration,for occationally hung on while u-boot init the network driver.
+	if ((s = getenv ("disable_watchdog")) == NULL){
+		puts ("enable watchdog\n");
+		ar7240_reg_wr(AR7240_WATCHDOG_TMR_CONTROL, 3);
+		ar7240_reg_wr(AR7240_WATCHDOG_TMR, 0xffffffff);
+	}
+/*zhangsiyu add end*/
+
 #if (CONFIG_COMMANDS & CFG_CMD_NET)
 #if defined(CONFIG_NET_MULTI)
 	puts ("Net:   ");
@@ -459,7 +482,11 @@ void board_init_r (gd_t *id, ulong dest_addr)
 #endif
 
         ath_set_tuning_caps(); /* Needed here not to mess with Ethernet clocks */
-
+//limiao add for crc
+        if ((s = getenv ("crc")) == NULL) {
+		    crc_flash();
+	    }
+//limiao add end for crc
 	/* main_loop() can return to retry autoboot, if so just run it again. */
 	for (;;) {
 		main_loop ();

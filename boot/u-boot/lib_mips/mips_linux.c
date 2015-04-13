@@ -30,9 +30,9 @@
 #include <asm/byteorder.h>
 #include <asm/addrspace.h>
 
-#ifdef CONFIG_AR7240
+//#ifdef CONFIG_AR7240
 #include <ar7240_soc.h>
-#endif
+//#endif
 DECLARE_GLOBAL_DATA_PTR;
 
 #define	LINUX_MAX_ENVS		256
@@ -237,6 +237,18 @@ void do_bootm_linux (cmd_tbl_t * cmdtp, int flag, int argc, char *argv[],
 
 	sprintf (env_buf, "0x%X", (uint) (gd->bd->bi_flashsize));
 	linux_env_set ("flash_size", env_buf);
+
+    /*zhangsiyu add watchdog function in u-boot 2014-9-22*/    
+    //depict 1: about 30s will reset u-boot if without any opreration,for occationally hung on while u-boot init the network driver.
+    //depict 2: we feed the watchdog with 0xffff ffff here, so it can last another 23s to reset,make sure it won't reset before pro_ctl_mod start
+    char *s;
+    if ((s = getenv ("disable_watchdog")) == NULL){
+        puts ("feed the  watchdog with 0xffff ffff\n");
+        ar7240_reg_wr(AR7240_WATCHDOG_TMR_CONTROL, 3);
+        ar7240_reg_wr(AR7240_WATCHDOG_TMR, 0xffffffff);
+    }   
+    /*zhangsiyu add end*/
+
 
 	/* we assume that the kernel is in place */
 	printf ("\nStarting kernel ...\n\n");

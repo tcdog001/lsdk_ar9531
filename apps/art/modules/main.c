@@ -123,7 +123,7 @@ static INT32 __init dk_module_init(void)
 			printk("No link on PCIe_1\n");
 		}
 	}
-	if((chip_rev_id==0x100)||(chip_rev_id==0x1100)||(chip_rev_id==0x101)||(chip_rev_id==0x1101)
+	if((chip_rev_id==0x100)||(chip_rev_id==0x1100)||(chip_rev_id==0x101)||(chip_rev_id==0x1101)||(chip_rev_id==0x0160)//add by zhangsiyu for CHIP REV ID: 160
 	||(chip_rev_id==0x2120)||(chip_rev_id==0x1120)||(chip_rev_id==0x0120) // Wasp 1.0 package C, B and A
 	||(chip_rev_id==0x2121)||(chip_rev_id==0x1121)||(chip_rev_id==0x0121) // Wasp 1.1 package C, B and A
 	||(chip_rev_id==0x2122)||(chip_rev_id==0x1122)||(chip_rev_id==0x0122) // Wasp 1.2 package C, B and A

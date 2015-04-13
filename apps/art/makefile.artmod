@@ -72,6 +72,13 @@ honeybee:
 	make ARCH=$(ARC) AP83=1 WASP=1 DEBUG=$(DEBUG) CROSS_COMPILE=$(CROSS_CC) -C $(KDIR) M=$(PWD)/modules modules	
 
 
+honeybee_pci:
+
+	@echo Making art module for Atheros honeybee_pci slot 1 or 2 DBSC based design.
+
+	make ARCH=$(ARC) AP83=1 WASP=1 PYTHON_EMU=1 WASP_OSPREY=1 DEBUG=$(DEBUG) CROSS_COMPILE=$(CROSS_CC) -C $(KDIR) M=$(PWD)/modules modules
+
+
 wasp_osprey:
 
 	@echo Making art module for Atheros wasp-osprey DBSC based design.

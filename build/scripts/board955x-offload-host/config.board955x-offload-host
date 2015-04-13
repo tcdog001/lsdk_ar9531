@@ -1,0 +1,154 @@
+#
+# Copyright (c) 2013 Qualcomm Atheros, Inc.
+#
+# Permission to use, copy, modify, and/or distribute this software for any
+# purpose with or without fee is hereby granted, provided that the above
+# copyright notice and this permission notice appear in all copies.
+# 
+# THE SOFTWARE IS PROVIDED "AS IS" AND THE AUTHOR DISCLAIMS ALL WARRANTIES
+# WITH REGARD TO THIS SOFTWARE INCLUDING ALL IMPLIED WARRANTIES OF
+# MERCHANTABILITY AND FITNESS. IN NO EVENT SHALL THE AUTHOR BE LIABLE FOR
+# ANY SPECIAL, DIRECT, INDIRECT, OR CONSEQUENTIAL DAMAGES OR ANY DAMAGES
+# WHATSOEVER RESULTING FROM LOSS OF USE, DATA OR PROFITS, WHETHER IN AN
+# ACTION OF CONTRACT, NEGLIGENCE OR OTHER TORTIOUS ACTION, ARISING OUT OF
+# OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
+#
+
+PARENT_BOARD=ap135
+export PARENT_BOARD
+
+# Check for correct value of BUILD_CONFIG
+ifeq (,$(BUILD_CONFIG))
+BUILD_CONFIG=_tb627
+$(info ******************************)
+$(info * Setting BUILD_CONFIG=$(BUILD_CONFIG) *)
+$(info ******************************)
+else
+ifeq (,$(filter _ap136 _ap136_bootrom _tb627 _tb627_bootrom_pcie _ap135_bootrom_pcie,$(BUILD_CONFIG)))
+$(error BUILD_CONFIG must be { _ap136 _ap136_bootrom,_tb627,_tb627_bootrom_pcie,_ap135_bootrom_pcie})
+endif
+endif
+
+# Set CFG_BOARD_TYPE to include variables
+# defined by parent board config.
+ifeq ($(BUILD_CONFIG),_ap136)
+export CFG_BOARD_TYPE=ap136
+endif
+ifeq ($(BUILD_CONFIG),_ap136_bootrom)
+export CFG_BOARD_TYPE=ap136
+#export BOOTROM_BOARD=1
+export AP136_BOOTROM_HOST=1
+endif
+
+ifeq ($(BUILD_CONFIG),_tb627)
+export CFG_BOARD_TYPE=tb627-master
+endif
+
+ifeq ($(BUILD_CONFIG),_tb627_bootrom_pcie)
+export CFG_BOARD_TYPE=tb627-master
+#export BOOTROM_BOARD=1
+export HIF=pcie
+export BUILD_ADF_PCI_PVT=1
+#export AH_CAL_LOCATIONS_AHB=0xbfff1000
+endif
+
+ifeq ($(BUILD_CONFIG),_ap135_bootrom_pcie)
+export CFG_BOARD_TYPE=ap135
+#export BOOTROM_BOARD=1
+export HIF=pcie
+export BUILD_ADF_PCI_PVT=1
+endif
+
+export CONFIG_BASIC=0
+
+include scripts/$(PARENT_BOARD)/config.$(PARENT_BOARD)
+
+#override&disable 11ac options for perf_pwr_offload
+export QCA_OL_11AC_FAST_PATH=0
+export ATH_11AC_TXCOMPACT=0
+export UMAC_SUPPORT_VAP_PAUSE=0
+export ATH_VAP_PAUSE_SUPPORT=0
+export ATH_PERF_PWR_OFFLOAD=0
+export ATH_TGT_TYPE=0
+export ATH_HIF_TYPE=0
+export FORCE_LEGACY_PCI_INTERRUPTS=0
+export LOAD_ARRAY_FW=0
+export WDI_EVENT_ENABLE=0
+export ATH_OL_11AC_DMA_BURST=0
+
+# Reset CFG_BOARD_TYPE
+export CFG_BOARD_TYPE=$(BOARD_TYPE)
+
+export BUILD_EXT=
+
+# Set gmac configs for AP136 bootrom host board
+ifeq ($(BUILD_CONFIG),_ap136_bootrom)
+export BUSYBOX=busybox-1.15.0
+export ETH_CONFIG=_vir
+export ETH_CONFIG2=_s17
+export ATH_GMAC_GE0_IS_CONNECTED=1
+export ATH_GMAC_GE1_IS_CONNECTED=1
+export ATH_GMAC0_MII=ATHR_RGMII
+export ATH_GMAC1_MII=ATHR_SGMII
+export SCO_SLAVE_CONNECTED=0
+export S17_SWMAC6_CONNECTED=0
+export ATH_SGMII_FORCED=1
+export ATH_GMAC_SUPPORT_DUAL_PHY=1
+#sgmii defines
+export ATH_CFG_SGMII=1
+export ATH_CONFIG_SWAP_SGMII=0
+#export AH_CAL_IN_FLASH_PCI=1
+#offload specific macro inclusions
+export OFFLOAD_TGT_RECOVERY=1
+else
+export OFFLOAD_TGT_RECOVERY=0
+endif
+
+#export ETH_CONFIG=_s17
+#export ETH_CONFIG2=_vir
+#export ATH_GMAC_GE0_IS_CONNECTED=1
+#export ATH_GMAC_GE1_IS_CONNECTED=1
+#export ATH_GMAC0_RGMII=1
+#export ATH_GMAC1_SGMII=1
+#sgmii defines
+#export ATH_CFG_SGMII=1
+#export ATH_CONFIG_SWAP_SGMII=0
+#export ATH_GMAC_SUPPORT_DUAL_PHY=1
+# export AH_CAL_IN_FLASH_PCI=1
+
+#DEFINE AH_CAL_IN_FLASH_PCI to indicate CALDATA is read from flash thr' PCI bus.
+#DEFINE AH_CAL_IN_FLASH_AHB to indicate CALDATA is read from flash thr' AHB bus
+#DO NOT DEFINE AH_CAL_IN_FLASH if bus type is dual.
+
+# define if Calibration data to be in send from Host
+export AH_OFFLOAD_CALDATA_FROM_HOST=0
+export AH_OFFLOAD_RADIOS_AHB=0
+export AH_OFFLOAD_RADIOS_AHB_CALDATA_ADDR=0x83ff8000
+export AH_OFFLOAD_RADIOS_PCI=0
+export AH_OFFLOAD_RADIOS_PCI_CALDATA_ADDR=0x83ffc000
+export AH_OFFLOAD_CALDATA_LOCATION_ON_HOST=0xbfff0000
+export AH_OFFLOAD_TGT_FIRMWARE_STATIC_LINK=0
+
+export UMAC_SUPPORT_NAWDS=1
+
+export ENET_JUMBO_SUP=1
+
+export OFFLOAD_LAN_BYPASS=1
+export OFFLOAD_APPBR=1
+export BUILD_ADF_NET_IOCTL=1
+export UMAC_SUPPORT_ACFG=1
+
+ifeq ($(BUILD_CONFIG),_tb627_bootrom_pcie)
+export AH_OFFLOAD_CALDATA_FROM_HOST=0
+export OFFLOAD_LAN_BYPASS=0
+endif
+
+ifeq ($(BUILD_CONFIG),_ap135_bootrom_pcie)
+export AH_OFFLOAD_CALDATA_FROM_HOST=0
+export OFFLOAD_LAN_BYPASS=0
+endif
+
+# Hotspot 2.0 L2 Traffic Inspection and Filtering support
+export UMAC_SUPPORT_HS20_L2TIF=1
+export ATH_SUPPORT_HS20=1
+

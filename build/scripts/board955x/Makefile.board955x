@@ -1,0 +1,481 @@
+#
+# Copyright (c) 2013 Qualcomm Atheros, Inc.
+#
+# Permission to use, copy, modify, and/or distribute this software for any
+# purpose with or without fee is hereby granted, provided that the above
+# copyright notice and this permission notice appear in all copies.
+# 
+# THE SOFTWARE IS PROVIDED "AS IS" AND THE AUTHOR DISCLAIMS ALL WARRANTIES
+# WITH REGARD TO THIS SOFTWARE INCLUDING ALL IMPLIED WARRANTIES OF
+# MERCHANTABILITY AND FITNESS. IN NO EVENT SHALL THE AUTHOR BE LIABLE FOR
+# ANY SPECIAL, DIRECT, INDIRECT, OR CONSEQUENTIAL DAMAGES OR ANY DAMAGES
+# WHATSOEVER RESULTING FROM LOSS OF USE, DATA OR PROFITS, WHETHER IN AN
+# ACTION OF CONTRACT, NEGLIGENCE OR OTHER TORTIOUS ACTION, ARISING OUT OF
+# OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
+#
+
+export HAL=$(TOPDIR)/drivers/wlan_modules/hal
+export ENETDIR=$(TOPDIR)/linux/drivers/ethernet
+export ATH_TOOL_DIR=$(TOPDIR)/drivers/wlan_modules/os/linux/tools/
+export ATH_DFS=$(TOPDIR)/drivers/wlan_modules/lmac/dfs
+export BOOTLOADERDIR=$(TOPDIR)/boot/u-boot
+export ATHEROSPATH=$(TOPDIR)/drivers/wlan_modules
+export I2SDIR=$(TOPDIR)/linux/drivers/i2s
+export I2SMODPATH=$(INSTALL_ROOT)/lib/modules/$(KERNELVER)/i2s
+export SOUNDDIR=${KERNELPATH}/sound
+export SLICDIR=$(TOPDIR)/linux/drivers/slic
+export SLICMODPATH=$(INSTALL_ROOT)/lib/modules/$(KERNELVER)/slic
+export I2CDIR=$(KERNELPATH)/arch/mips/atheros/i2c
+export I2CMODPATH=$(INSTALL_ROOT)/lib/modules/$(KERNELVER)/i2c
+export USBMODPATH=$(INSTALL_ROOT)/lib/modules/$(KERNELVER)/usb
+export USBDIR=${KERNELPATH}/drivers/usb
+export DRIVERDIR=${KERNELPATH}/drivers
+export PCIDIR=${KERNELPATH}/drivers/pci
+export PCITGTMODPATH=$(INSTALL_ROOT)/lib/modules/$(KERNELVER)/athpci
+export IPTABLESDIR=$(TOPDIR)/apps/iptables/iptables-1.4.5
+export SQUASHFSLZMADIR=$(TOPDIR)/build/squashfs-lzma
+export SQUASHFSFILE=$(BOARD_TYPE)$(BUILD_CONFIG)-squashfs
+export SSDK_DIR=$(TOPDIR)/linux/drivers/s17_ssdk
+export SSDK_SHELL_DIR=$(TOPDIR)/apps/s17_ssdk_shell
+export NTFS_3G_DIR=$(TOPDIR)/apps/ntfs-3g-2010.10.2
+export FS_SW_DIR=$(TOPDIR)/boot/rom-boot-drv/sco
+export ACFGAPPDIR=$(TOPDIR)/include
+export ACFGDIR=$(TOPDIR)/apps/acfg
+export FWU_UTIL=$(TOPDIR)/boot/rom-boot-drv/utils
+export WRAPDDIR=$(TOPDIR)/apps/wrapd
+#
+# Makefile for WASP Fusion build.  It has dependancies for both
+# the "common" build and the "jffs2" build.  This is unique for
+# each board type, and must be configured for each board.
+#
+
+# To enable library optimization (removing unused object code from
+# shared libraries) set BUILD_LIBRARYOPT to 'y' else 'n'
+BUILD_LIBRARYOPT := n
+
+ifeq ($(GWLANG),)
+export GWLANG=mlang_en
+endif
+
+export fs_build=$(BUILD_TYPE)_build
+export stage2_build=
+
+ifdef ATH_DUAL_FLASH
+ifeq ($(BUILD_TYPE), jffs2)
+export fs_build=nandjffs2_build
+endif
+endif
+
+ifdef BOOT_FROM_NAND
+ifeq ($(BUILD_TYPE), jffs2)
+export fs_build=nandjffs2_build
+endif
+export stage2_build=stage2
+endif
+
+ifeq ($(ATH_SUPPORT_WAPI),1)
+export wapi=wapi_build
+endif
+
+ifeq ($(CONFIG_TYPE),wrap)
+export wrapd_build=wrapd_build
+endif
+
+ifeq ($(BUILD_CONFIG), _routing)
+$(BOARD_TYPE)_build: common_mainline iptables_build driver_build $(fs_build) art_mod
+else
+ifeq ($(BUILD_CONFIG), _s16_routing)
+
+$(BOARD_TYPE)_build: common_mainline iptables_build driver_build $(fs_build) art_mod
+else
+ifeq ($(BUILD_CONFIG), _hwaccel)
+$(BOARD_TYPE)_build: common_mainline iptables_build driver_build  $(fs_build) art_mod
+else
+ifeq ($(BUILD_CONFIG), _i2ssmb)
+$(BOARD_TYPE)_build: common_mainline usb_build i2s_build athplay_tools_fus samba_build driver_build $(fs_build) art_mod
+else
+ifeq ($(strip $(CONFIG_BASIC)),1)
+$(BOARD_TYPE)_build: common_mainline $(wrapd_build) wpc_build driver_build usb_build i2s_build athplay_tools_fus slic_build slic_app $(fs_build) art_mod
+else
+#$(BOARD_TYPE)_build: common_mainline driver_build usb_build i2s_build athplay_tools_fus slic_build slic_app $(fs_build) art_mod
+$(BOARD_TYPE)_build: common_mainline $(wrapd_build) wpc_build driver_build usb_build athplay_tools_fus i2c_build  $(fs_build) art_mod
+# $(BOARD_TYPE)_build: common_mainline driver_build usb_build pci_host_build pci_target_build $(fs_build)
+#$(BOARD_TYPE)_build: common_mainline i2s_build athplay_tools_fus usb_build $(fs_build)
+#$(BOARD_TYPE)_build: common_mainline slic_build slic_app i2s_build athplay_tools_fus $(fs_build)
+#$(BOARD_TYPE)_build: common_mainline gateway_build slic_build slic_app $(fs_build)
+endif
+endif
+endif
+endif
+endif
+#	lzma_uimage kernel_info enet_build usb_build busybox_build wpa2 \
+
+ifeq ($(BUILD_ATHR_HOSTAP),1)
+common_mainline: check_tftp rootfs_prep toolchain_build \
+	kernel_build kernel_info enet_build busybox_build athr-hostapd athr-wpa_supplicant $(wapi) spectral_app_build \
+	sar cgi lzma_uimage uboot_mainline \
+	athplay_tools_fus   $(stage2_build)
+else
+common_mainline: check_tftp rootfs_prep toolchain_build \
+	kernel_build kernel_info enet_build busybox_build wpa2 wapi_build spectral_app_build \
+	sar cgi lzma_uimage uboot_mainline \
+	athplay_tools_fus $(stage2_build)
+endif
+#	lzma_uimage kernel_info enet_build busybox_build wpa2 \
+#	uboot_mainline sar cgi
+
+
+iptables_build:
+	@echo making iptables
+	cd $(IPTABLESDIR) && \
+    ./configure --host=mips-linux --build=x86_64-unknown-linux-gnu --target=mips-linux --enable-static --enable-shared --disable-ipv6 --with-kernel=${KERNELPATH} --prefix=$(INSTALL_ROOT) \
+    $(MAKE) clean && \
+    $(MAKE) && $(MAKE) install
+#	cp .libs/iptables-multi $(INSTALL_ROOT)/sbin/iptables && \
+#	cp -P .libs/libxtables*.so* $(INSTALL_ROOT)/lib && \
+#	cp -P libiptc/.libs/libip4tc*.so* $(INSTALL_ROOT)/lib && \
+#	cd extensions && \
+#	cp libipt_DNAT.so libipt_MASQUERADE.so libipt_SNAT.so libxt_conntrack.so libxt_standard.so libxt_state.so libxt_tcp.so libxt_udp.so libipt_icmp.so libxt_helper.so $(INSTALL_ROOT)/lib
+
+#	$(MAKE) KERNEL_DIR=$(KERNELPATH) NO_SHARED_LIBS=1 && \
+#	$(TOOLPREFIX)strip -s iptables && \
+#	cp iptables-multi $(INSTALL_ROOT)/sbin/iptables
+
+samba_build:
+ifeq ($(BUILD_SAMBA),y)
+	@echo Building samba ver 3.0.24.....
+	cd ../apps/samba-3.0.24/source; \
+        make CC=$(TOOLPREFIX)gcc AR=$(TOOLPREFIX)ar LD=$(TOOLPREFIX)ld ; \
+        mkdir $(INSTALL_ROOT)/usr/local; \
+        make CC=$(TOOLPREFIX)gcc AR=$(TOOLPREFIX)ar LD=$(TOOLPREFIX)ld STRIP=$(TOOLPREFIX)strip install prefix=$(INSTALL_ROOT)/usr/local;
+endif
+
+#
+# Unique rules for the ag7240 PHY with the
+#
+
+ifeq ($(BUILD_S17HNAT),1)
+enet_build: ssdk_build ssdk_shell_build
+else
+enet_build: 
+endif
+	cd $(ENETDIR) && rm -f *.o *.ko *.mod.* &&  make -f Makefile.inc enet_config.h
+	$(MAKEARCH) -C $(KERNELPATH) SUBDIRS=$(ENETDIR) modules
+	test -d $(MODULEPATH) || mkdir -p $(MODULEPATH)
+	cp $(ENETDIR)/athrs_gmac.ko $(MODULEPATH)
+
+i2s_build: kernel_build
+	cd $(I2SDIR) && rm -f *.o *.ko *.mod.*
+	$(MAKEARCH) -C $(KERNELPATH) SUBDIRS=$(I2SDIR) modules
+	test -d $(I2SMODPATH) || mkdir -p $(I2SMODPATH)
+	cp $(I2SDIR)/ath_i2s.ko $(I2SMODPATH)
+
+i2c_build: kernel_build
+	test -d $(I2CMODPATH) || mkdir -p $(I2CMODPATH)
+	cp $(I2CDIR)/ath_i2c.ko $(I2CMODPATH)
+	@echo making i2c_test
+	cd ../apps/i2ctest; make clean; make; \
+    $(STRIP) i2ctest; \
+    cp -f i2ctest $(INSTALL_ROOT)/bin;
+
+pci_build: kernel_build
+	test -d $(PCITGTMODPATH) || mkdir -p $(PCITGTMODPATH)
+	cp $(PCIDIR)/ath_pci_tgt.ko $(PCITGTMODPATH)
+
+slic_build: kernel_build
+	cd $(SLICDIR) && rm -f *.o *.ko *.mod.*
+	$(MAKEARCH) -C $(KERNELPATH) SUBDIRS=$(SLICDIR) modules
+	test -d $(SLICMODPATH) || mkdir -p $(SLICMODPATH)
+	cp $(SLICDIR)/ath_slic.ko $(SLICMODPATH)
+
+athplay_tools_fus:
+	@echo making athplay_tools
+	cd ../apps/athplay; make clean; make; \
+	$(STRIP) athplay; \
+	cp -f athplay $(INSTALL_ROOT)/bin;
+
+testusb:
+	@echo making testusb
+	cd ../apps/testusb; make clean; make; \
+	$(STRIP) testusb; \
+	cp -f testusb $(INSTALL_ROOT)/bin;
+
+slic_app:
+	@echo making slic application
+	cd ../apps/slicapp; make clean; make; \
+	$(STRIP) slicapp; \
+	cp -f slicapp $(INSTALL_ROOT)/bin;
+
+WIRELESSTOOLNAMES := athstats athstatsclear 80211stats athkey athchans athctrl\
+	athdebug 80211debug wlanconfig athcwm athampdutrc atrc \
+	pktlogconf pktlogdump radartool cgiMain
+wireless_tools_main:
+	@echo making wireless_tools
+	if test -n "$(WIRELESSTOOLS)"; then \
+	cd ../apps/$(WIRELESSTOOLS); make clean; make; \
+	cp -f $(WIRELESSTOOLSLIB) $(INSTALL_ROOT)/lib; \
+	cp -f iwpriv $(INSTALL_ROOT)/sbin; \
+	cp -f iwconfig $(INSTALL_ROOT)/sbin; \
+	cp -f iwlist $(INSTALL_ROOT)/sbin; \
+	cd $(TOPDIR)/drivers/wlan_modules/os/linux/tools && make clean; \
+	make wlanconfig BUILD_STATIC=$(BUILD_STATIC); \
+	cp -f wlanconfig $(INSTALL_ROOT)/sbin; \
+	cd $(PERF_PWR_OFFLOAD_DIR_PATH)/host/os/linux/tools/athdiag && make clean; \
+	make all; \
+	cp -f athdiag $(INSTALL_ROOT)/sbin; \
+$	cd $(PERF_PWR_OFFLOAD_DIR_PATH)/host/tools/systemtools/testcmd_tlv && make -f makefile.linux WORKAREA=$(PERF_PWR_OFFLOAD_DIR_PATH); \
+	cp -f $(PERF_PWR_OFFLOAD_DIR_PATH)/host/tools/systemtools/testcmd_tlv/Linux/athtestcmd $(INSTALL_ROOT)/sbin; \
+	cp -f $(PERF_PWR_OFFLOAD_DIR_PATH)/host/tools/systemtools/testcmd_tlv/Linux/*.so $(INSTALL_ROOT)/lib/; \
+	fi
+
+ath_tools: ath_tools_clean
+	@echo makeing ath tools;\
+	cd ../drivers/wlan_modules/os/linux/tools;\
+	make ath_tools;
+
+ath_tools_clean:
+	@echo cleaning ath tools;\
+	cd ../drivers/wlan_modules/os/linux/tools;\
+	make ath_tools_clean;
+
+cgi: ath_tools_clean
+	@echo makeing cgi;\
+	cd ../drivers/wlan_modules/os/linux/tools;\
+	rm -rf cgiMain;\
+	make cgiMain;
+
+art_mod:
+	@echo Making ART Module
+	cd ../apps/art && make -f makefile.artmod clean && \
+	make -f makefile.artmod scorpion
+	cp ../apps/art/modules/art.ko $(MODULEPATH)/art-scorpion.ko
+	cd ../apps/art && make -f makefile.artmod clean && \
+	make -f makefile.artmod scorpion_pci
+	cp ../apps/art/modules/art.ko $(MODULEPATH)/art-scorpion-peacock.ko
+
+main_hal_build:
+	@echo making hal
+	if test -n "$(TARGETARCH)"; then \
+	cd $(HAL)/linux && make TARGET=$(TARGETARCH) clean &&  \
+	make TARGET=$(TARGETARCH) && make TARGET=$(TARGETARCH) release; \
+	fi
+
+driver_build: main_hal_build wireless_tools_main ath_tools acfg_build
+	@echo making umac
+	cd $(TOPDIR)/drivers/wlan_modules/os/linux && \
+	$(MAKEARCH) TARGET=$(TARGETARCH) clean \
+	&& $(MAKEARCH) TARGET=$(TARGETARCH) && \
+	$(MAKEARCH) DESTDIR=$(INSTALLROOT) TARGET=$(TARGETARCH) install
+
+driver_buildnc: 
+	@echo making umac
+	cd $(TOPDIR)/drivers/wlan_modules/os/linux && \
+	$(MAKEARCH) TARGET=$(TARGETARCH) && \
+	$(MAKEARCH) DESTDIR=$(INSTALLROOT) TARGET=$(TARGETARCH) install
+	$(MAKE) $(fs_build)
+
+pci_target_build: kernel_build
+	cd $(PCITGTDIR) && rm -f *.o *.ko *.mod.*
+	$(MAKEARCH) -C $(KERNELPATH) SUBDIRS=$(PCITGTDIR) modules
+	test -d $(PCITGTMODPATH) || mkdir -p $(PCITGTMODPATH)
+	cp $(PCITGTDIR)/ath_pci_tgt.ko $(PCITGTMODPATH)
+
+pci_host_build:
+	cd $(PCIHOSTDIR) && rm -f *.o *.ko *.mod.*
+	$(MAKEARCH) -C $(KERNELPATH) SUBDIRS=$(PCIHOSTDIR) modules
+	test -d $(PCIHOSTMODPATH) || mkdir -p $(PCIHOSTMODPATH)
+	cp $(PCIHOSTDIR)/pci_loop.ko $(PCIHOSTMODPATH)
+	cp $(PCIHOSTDIR)/pcie_host.ko $(PCIHOSTMODPATH)
+
+usb_build: kernel_build
+	test -d $(USBMODPATH) || mkdir -p $(USBMODPATH)
+	cp -f $(USBDIR)/core/usbcore.ko ${USBMODPATH}
+	cp -f ${USBDIR}/host/ehci-hcd.ko ${USBMODPATH}
+#	cp -f ${DRIVERDIR}/hid/hid.ko ${USBMODPATH}
+#	cp -f ${DRIVERDIR}/hid/hid-logitech.ko ${USBMODPATH}
+#	cp -f ${DRIVERDIR}/hid/usbhid/usbhid.ko ${USBMODPATH}
+#	cp -f ${DRIVERDIR}/input/mousedev.ko ${USBMODPATH}
+	cp -f ${USBDIR}/storage/usb-storage.ko ${USBMODPATH}
+ifneq ($(strip $(CONFIG_BASIC)),1)
+	cp -f ${DRIVERDIR}/hid/hid.ko ${USBMODPATH}
+	cp -f ${DRIVERDIR}/hid/hid-logitech.ko ${USBMODPATH}
+	cp -f ${DRIVERDIR}/hid/usbhid/usbhid.ko ${USBMODPATH}
+	cp -f ${DRIVERDIR}/input/mousedev.ko ${USBMODPATH}
+	cp -f ${USBDIR}/gadget/g_ether.ko ${USBMODPATH}
+#	cp -f ${USBDIR}/gadget/g_audio.ko ${USBMODPATH}
+	cp -f ${USBDIR}/gadget/ath_udc.ko ${USBMODPATH}
+#	cp -f $(SOUNDDIR)/soundcore.ko $(USBMODPATH)
+#	cp -f $(SOUNDDIR)/core/snd-timer.ko $(USBMODPATH)
+#	cp -f $(SOUNDDIR)/core/snd-pcm.ko $(USBMODPATH)
+#	cp -f $(SOUNDDIR)/core/snd.ko $(USBMODPATH)
+#	cp -f $(SOUNDDIR)/core/snd-page-alloc.ko $(USBMODPATH)
+	cp -f ${DRIVERDIR}/net/usb/usbnet.ko ${USBMODPATH}
+	cp -f ${DRIVERDIR}/net/usb/cdc_ether.ko ${USBMODPATH}
+endif
+
+uboot_mainline:
+	@echo making uboot...
+	cd $(BOOTLOADERDIR) && make $(BOARD_TYPE)_config
+	cd $(BOOTLOADERDIR) && make clean && make BUILD_DIR=$(TOPDIR)/build
+ifeq ($(strip ${COMPRESSED_UBOOT}),1)
+	cp $(BOOTLOADERDIR)/tuboot.bin $(IMAGEPATH)
+	cp $(BOOTLOADERDIR)/tuboot.bin $(TFTPPATH)
+else
+	cp $(BOOTLOADERDIR)/u-boot.bin $(IMAGEPATH)
+	cp $(BOOTLOADERDIR)/u-boot.bin $(TFTPPATH)
+endif
+
+stage1:
+	@echo making 1st stage f/w ...
+	@cd $(FS_SW_DIR) && make CHIP=955x clean all
+	cp $(FS_SW_DIR)/fwu_rombootdrv.c $(IMAGEPATH)
+
+fwu_util:
+	cd $(FWU_UTIL)  && \
+	mkdir -p bin    && \
+	make clean && \
+	make
+
+stage2: fwu_util stage1
+	@echo Combining 1st and 2nd stage f/w ...
+ifeq ($(strip ${COMPRESSED_UBOOT}),1)
+	@echo use compressed uboot
+	@cd $(FS_SW_DIR) && ./mk2stage -2 $(IMAGEPATH)/tuboot.bin && cp 2fw.bin $(IMAGEPATH) && cp 2fw.bin $(TFTPPATH)
+else
+	@echo use normal uboot
+	@cd $(FS_SW_DIR) && ./mk2stage -2 $(IMAGEPATH)/u-boot.bin && cp 2fw.bin $(IMAGEPATH) && cp 2fw.bin $(TFTPPATH)
+endif
+
+uboot_tools:
+	@echo Making uboot tools...
+	cd $(BOOTLOADERDIR) && $(MAKEARCH) mrproper
+	cd $(BOOTLOADERDIR) && make $(BOARD_TYPE)_config
+	cd $(BOOTLOADERDIR) && make tools
+
+lzma_build:
+	@echo making lzma.....
+	cd $(TOPDIR)/apps/lzma457/CPP/7zip/Compress/LZMA_Alone && \
+	make -f makefile.gcc clean && \
+	make -f makefile.gcc  && \
+	echo copying lzma... && \
+	cp -f lzma	$(TOPDIR)/build/util
+
+lzma_uimage: kernel_build lzma_build uboot_tools
+	@echo "Generating LZMA'ed kernel....."
+	cd $(KERNELPATH)/arch/$(KERNELARCH)/boot && \
+	$(TOPDIR)/build/util/lzma e $(KERNELTARGET) $(KERNELTARGET).lzma && \
+	cp $(KERNELTARGET).lzma $(IMAGEPATH)/$(KTFILE).lzma;
+	echo Making uImage...
+	cd util && mkuImage.sh $(UBOOTDIR)/tools $(KERNELPATH) $(BUILD_CONFIG)$(BUILD_EXT) lzma
+
+# Note: doing a make (make all) in gateway automatically does an install
+gateway_build:
+	@echo BEGIN make gateway_build at `date`
+	cd ../apps/gateway && $(MAKE) GATEWAY_MAKE_CLEAN=y clean && \
+	$(MAKE) GATEWAY_MAKE_CLEAN=y CC=$(TOOLPREFIX)gcc AR=$(TOOLPREFIX)ar LD=$(TOOLPREFIX)ld all
+	@echo END make gateway_build at `date`
+
+$(TOPDIR)/boot/rom-boot-drv/utils/bin/bin2hex:
+	$(MAKE) -C $(TOPDIR)/boot/rom-boot-drv/utils/bin2hex
+
+vmlrd: kernel_build kernel_info ram_build  $(TOPDIR)/boot/rom-boot-drv/utils/bin/bin2hex
+	cd $(IMAGEPATH) && BOARD_TYPE=${CFG_BOARD_TYPE} $(TOPDIR)/build/util/mksingle
+
+sqlzma_build:
+	cd $(SQUASHFSLZMADIR) && \
+	$(MAKE)
+
+sqlzma_clean:
+	cd $(SQUASHFSLZMADIR) && \
+	$(MAKE) clean
+
+$(TOPDIR)/build/util/mksquashfs4.0:
+	@echo ======= Compiling $@ ========
+	@cd $(TOPDIR)/build/squashfs-lzma/squashfs4.0/squashfs-tools/; make
+	@echo ======= Copying $@ ========
+	@cp squashfs-lzma/squashfs4.0/squashfs-tools/mksquashfs util/mksquashfs4.0
+
+squashfs_build: sqlzma_build image_root $(TOPDIR)/build/util/mksquashfs4.0
+	@echo BEGIN make squashfs at `date`
+	cd $(IMAGE_ROOT) && mkdir -p ./dev -m 715
+	cd $(IMAGE_ROOT) && mkdir -p ./sys -m 715
+	cd $(IMAGE_ROOT) && ln -s /tmp/mnt ./mnt
+	@echo Not creating hacked device files,
+	@echo mksquashfs 4.0 supports dev.txt
+	echo $(BOARD_TYPE)/`date +%F-%H:%M` >$(IMAGE_ROOT)/version
+	$(TOPDIR)/build/util/mksquashfs4.0 $(IMAGE_ROOT) \
+		$(IMAGEPATH)/$(SQUASHFSFILE) -noappend -b 65536 -all-root \
+		-pf $(TOPDIR)/build/scripts/$(BOARD_TYPE)/dev.txt
+###	sudo $(TOPDIR)/build/scripts/$(BOARD_TYPE)/makedev.sh
+###	$(TOPDIR)/build/util/mksquashfs $(IMAGE_ROOT) $(IMAGEPATH)/$(SQUASHFSFILE) -noappend -be -all-root
+###	sudo chmod 777 $(IMAGEPATH)/$(SQUASHFSFILE)
+	chmod 644 $(IMAGEPATH)/$(SQUASHFSFILE)
+	cp $(IMAGEPATH)/$(SQUASHFSFILE) $(TFTPPATH)
+	@echo END make squashfs at `date`
+
+# Atheros S17 SSDK for hwnat, hwacl
+ssdk_build:
+	@echo making SSDK....
+	cd $(SSDK_DIR) && \
+	$(MAKE) clean; $(MAKE) CC=$(TOOLPREFIX)gcc AR=$(TOOLPREFIX)ar LD=$(TOOLPREFIX)ld STRIP=$(TOOLPREFIX)strip ; \
+	cp build/bin/ssdk_ks_km.a $(ENETDIR)/phys/
+	@echo end of making SSDK
+
+ssdk_shell_build:
+	@echo making SSDK_SHELL....
+	cd $(SSDK_SHELL_DIR) && \
+	$(MAKE) clean; $(MAKE) CC=$(TOOLPREFIX)gcc AR=$(TOOLPREFIX)ar LD=$(TOOLPREFIX)ld STRIP=$(TOOLPREFIX)strip ; \
+	cp build/bin/ssdk_sh $(INSTALL_ROOT)/sbin/ssdk_sh
+	@echo end of making SSDK_SHELL
+
+#building hostapd and supplicant 8.0 versions
+athr-hostapd:
+	@echo Making athr-hostapd  at `date`
+	if ( test -e ../apps/athr-hostap/hostapd ) then \
+	cp -f scripts/$(BOARD_TYPE)/athr_hostapd.conf ../apps/athr-hostap/hostapd/.config; \
+	cd ../apps/athr-hostap/hostapd; make clean; make CC=$(TOOLPREFIX)gcc AR=$(TOOLPREFIX)ar LD=$(TOOLPREFIX)ld; \
+	cp hostapd hostapd_cli $(INSTALL_ROOT)/sbin; \
+	fi
+	cp ../rootfs/cgiCommon/etc/ath/hostapd0.7.0_conf/* $(INSTALL_ROOT)/etc/ath
+	rm -rf $(INSTALL_ROOT)/etc/ath/hostapd0.7.0_conf
+	mkdir -p $(INSTALL_ROOT)/etc/wpa2
+
+athr-wpa_supplicant:
+	@echo Making athr wpa_supplicant  at `date`
+	if ( test -e ../apps/athr-hostap/wpa_supplicant ) then \
+	cp -f scripts/$(BOARD_TYPE)/athr_supplicant.conf ../apps/athr-hostap/wpa_supplicant/.config; \
+	cd ../apps/athr-hostap/wpa_supplicant; make clean; make CC=$(TOOLPREFIX)gcc AR=$(TOOLPREFIX)ar LD=$(TOOLPREFIX)ld; \
+	cp wpa_supplicant wpa_cli $(INSTALL_ROOT)/sbin; \
+	fi
+
+wapi_build:
+	@echo making WAPI daemon;
+	cd ../apps/wapid && make all; \
+	$(SUDO) cp wapid $(INSTALL_ROOT)/sbin; \
+	$(SUDO) cp app/talk/wapitalk $(INSTALL_ROOT)/sbin; 
+
+wrapd_build:
+	@echo "Building the WRAPD ..."
+	cd $(WRAPDDIR) && \
+	$(MAKEARCH) TARGET=$(TARGETARCH) && \
+	$(MAKEARCH) DESTDIR=$(INSTALL_ROOT) TARGET=$(TARGETARCH) install
+
+wrapd_clean:
+	@echo "Cleaning the WRAPD ..."
+	cd $(WRAPDDIR)&&  \
+	$(MAKEARCH) TARGET=$(TARGETARCH) clean
+	
+acfg_build: acfg_clean
+	@echo "Building the ACFG Library ..."
+	cd $(ACFGDIR)/src &&   \
+	$(MAKEARCH) TARGET=$(TARGETARCH) && \
+	$(MAKEARCH) DESTDIR=$(INSTALL_ROOT) TARGET=$(TARGETARCH) install
+	cp $(ACFGDIR)/../acfg_test_app/acfg_tool $(TFTPPATH)
+
+acfg_clean:
+	@echo "Cleaning the ACFG Library ..."
+	cd $(ACFGDIR)/src &&  \
+	$(MAKEARCH) TARGET=$(TARGETARCH) clean 
+
+
+

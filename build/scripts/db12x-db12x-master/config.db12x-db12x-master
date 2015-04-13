@@ -1,0 +1,100 @@
+#
+# Copyright (c) 2013 Qualcomm Atheros, Inc.
+#
+# Permission to use, copy, modify, and/or distribute this software for any
+# purpose with or without fee is hereby granted, provided that the above
+# copyright notice and this permission notice appear in all copies.
+# 
+# THE SOFTWARE IS PROVIDED "AS IS" AND THE AUTHOR DISCLAIMS ALL WARRANTIES
+# WITH REGARD TO THIS SOFTWARE INCLUDING ALL IMPLIED WARRANTIES OF
+# MERCHANTABILITY AND FITNESS. IN NO EVENT SHALL THE AUTHOR BE LIABLE FOR
+# ANY SPECIAL, DIRECT, INDIRECT, OR CONSEQUENTIAL DAMAGES OR ANY DAMAGES
+# WHATSOEVER RESULTING FROM LOSS OF USE, DATA OR PROFITS, WHETHER IN AN
+# ACTION OF CONTRACT, NEGLIGENCE OR OTHER TORTIOUS ACTION, ARISING OUT OF
+# OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
+#
+
+
+PARENT_BOARD=db12x
+export PARENT_BOARD
+include scripts/$(PARENT_BOARD)/config.$(PARENT_BOARD)
+
+#To build hostapd 0.8.0 version
+export BUILD_ATHR_HOSTAP=1
+
+#DEFINE AH_CAL_IN_FLASH_PCI to indicate CALDATA is read from flash thr' PCI bus.
+#DEFINE AH_CAL_IN_FLASH_AHB to indicate CALDATA is read from flash thr' AHB bus
+#DO NOT DEFINE AH_CAL_IN_FLASH if bus type is dual.
+
+#override the setting in db12x config for CUS191 not to read data from flash
+export AH_CAL_IN_FLASH_PCI=1
+
+# define if Calibration data to be in send from Host
+export AH_OFFLOAD_CALDATA_FROM_HOST=0
+export AH_OFFLOAD_RADIOS_AHB=0
+export AH_OFFLOAD_RADIOS_AHB_CALDATA_ADDR=0x83ff8000
+export AH_OFFLOAD_RADIOS_PCI=0
+export AH_OFFLOAD_RADIOS_PCI_CALDATA_ADDR=0x83ffc000
+export AH_OFFLOAD_CALDATA_LOCATION_ON_HOST=0xbfff0000
+
+
+export ATH_SWITCH_ONLY_MODE=0
+export ETH_CONFIG=_s17
+
+ifeq ($(ETH_CONFIG2),_s17)
+export ATH_GMAC_SUPPORT_DUAL_PHY=1
+export ETH_CONFIG2=_s17
+endif
+
+export BUILD_EXT=$(ETH_CONFIG)$(ETH_CONFIG2)
+
+export ATH_GMAC_RX_PKT_CNT=110
+
+# offload specific macro inclusions
+
+export UMAC_SUPPORT_NAWDS=1
+
+# Disable STA mode support to gain some CPU cycles
+export UMAC_SUPPORT_STA_MODE=0
+
+export ENET_JUMBO_SUP=1
+export HIF=gmac
+
+export OFFLOAD_LAN_BYPASS=1
+export OFFLOAD_APPBR=1
+export BUILD_ADF_NET_IOCTL=1
+
+# Randomness generation support from hardware
+#export ATH_GEN_RANDOMNESS=1
+#export CONFIG_IEEE80211W=1
+
+# IEEE 802.11v Proxy ARP
+#export UMAC_SUPPORT_PROXY_ARP=1
+
+# Hotspot 2.0 DGAF Disable support
+#export UMAC_SUPPORT_DGAF_DISABLE=1
+
+# Hotspot 2.0 L2 Traffic Inspection and Filtering support
+#export UMAC_SUPPORT_HS20_L2TIF=1
+
+#export ATH_SUPPORT_HS20=1
+
+#export UMAC_SUPPORT_BSSLOAD=1
+
+#export UMAC_SUPPORT_WNM=1
+#export UMAC_SUPPORT_RRM=1
+
+#export ATH_SUPPORT_VOW_DCS=1
+#export ATH_SUPPORT_VOWEXT=1
+#export ATH_VOW_EXT_STATS=1
+#export DIRECT_ATTACH=1
+
+
+export UMAC_SUPPORT_ACFG=1
+export UMAC_SUPPORT_SMARTANTENNA=0
+export ATH_SUPPORT_WIFIPOS=0
+
+
+# WAPI Support
+export ATH_SUPPORT_WAPI=0
+

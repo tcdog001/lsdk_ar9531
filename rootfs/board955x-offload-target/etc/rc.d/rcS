@@ -1,0 +1,162 @@
+#!/bin/sh
+
+# This script runs when init it run during the boot process.
+# Mounts everything in the fstab
+
+mount -a
+mount -o remount +w /
+
+#
+# Mount the RAM filesystem to /tmp
+#
+
+mount -t ramfs -n none /tmp
+
+export PATH=$PATH:/etc/ath
+KVER=`uname -r | cut -f 1 -d '-'`
+MODULE_PATH=/lib/modules/$KVER/net
+BOARD_INFO=/etc/.target_info
+
+insmod $MODULE_PATH/athrs_gmac.ko
+
+##
+## Put the names of the interfaces in the environmental variables
+## (They can be board unique)
+##
+HSTIF=eth0
+export WAN_IF=eth0
+export LAN_IF=eth1
+if [ -e "$BOARD_INFO" ]; then 
+	BOARD_TYPE=`cat $BOARD_INFO`
+	echo BOARD_TYPE=$BOARD_TYPE
+	if [ "$BOARD_TYPE" = "ap136" ]; then
+		echo "We are running on ap136. setting hst_if=eth0."
+##
+## Beta Boards have Eth0 / Eth1 swapped. Hence HSTIF must be changed to eth1. 
+## WAN_IF needs to be changed as  Jumbo needs to set even for eth1
+##
+		 HSTIF=eth1
+                export WAN_IF=eth1
+                export LAN_IF=eth0
+        #restore switch vlan config to default
+	fi
+	if [ "$BOARD_TYPE" = "ap135" ]; then
+		echo "We are running on ap135. setting hst_if=eth0."
+		HSTIF=eth0
+                export WAN_IF=eth0
+                export LAN_IF=eth1
+	fi
+	if [ "$BOARD_TYPE" = "tb627" ]; then
+		echo "We are running on tb627. setting hst_if=eth1."
+		HSTIF=eth1
+                export WAN_IF=eth1
+                export LAN_IF=eth0
+	fi
+	if [ "$BOARD_TYPE" = "ap132" ]; then
+		echo "We are running on ap132. setting hst_if=eth0."
+		HSTIF=eth0
+                export WAN_IF=eth0
+                export LAN_IF=eth1
+	fi
+
+else
+	echo "$BOARD_INFO not found. Using defaults..."
+fi
+
+
+ifconfig $WAN_IF up
+ifconfig $LAN_IF up
+#restore switch vlan config to default
+if [ "$BOARD_TYPE" = "ap136" ]; then
+    . /etc/s17_reg_default.sh
+fi
+if [ "$BOARD_TYPE" = "ap132" ]; then
+    . /etc/s17_reg_default.sh
+fi
+if [ "$BOARD_TYPE" = "ap135" ]; then
+    . /etc/s17_reg_default.sh
+fi
+#/etc/rc.d/rc.network
+#/etc/rc.d/rc.bridge
+#. /etc/ath/apcfg
+
+#enable jumbo frame support for 2048
+ethreg -i $WAN_IF -j 1
+ethreg -i $WAN_IF -s 2048
+
+# Set mtu for eth0
+ifconfig $WAN_IF mtu 2000
+
+# Create virtual interfaces to support Offload over VLAN.
+vconfig add ${HSTIF} 2
+ifconfig ${HSTIF}.2 up
+
+#if [ "${WLAN_ON_BOOT}" = "y" ]; then
+#    /etc/ath/apup
+#fi
+
+#
+# Enable USB
+#
+#insmod /lib/modules/2.6.31/usb/usbcore.ko
+#insmod /lib/modules/2.6.31/usb/ehci-hcd.ko
+#insmod /lib/modules/2.6.31/usb/usb-storage.ko
+
+#insmod /lib/modules/2.6.31/usb/ar9130_udc.ko
+#insmod $MODULE_PATH/xmiipsave.ko usb=1 gmac1=1 pciep=1 i2s=1
+if [ "$BOARD_TYPE" = "tb627_bootrom_pcie" ]; then
+	insmod $MODULE_PATH/hif_pcie.ko
+else
+	insmod $MODULE_PATH/hif_gmac.ko hst_if=$HSTIF
+fi
+
+insmod $MODULE_PATH/../offload/athlogger.ko mode=target livelog=0
+
+if [ "$BOARD_TYPE" = "ap136_bootrom" ];
+then
+insmod $MODULE_PATH/atd.ko max_num_radio=2
+else
+insmod $MODULE_PATH/atd.ko 
+fi
+
+sleep 1
+
+/etc/rc.d/rc.wlan up
+
+#
+# Untar the debug tools into /tmp/tools
+#
+
+mkdir /tmp/tools
+cd /tmp/tools
+tar -xzvf /sbin/debug.tgz
+
+/usr/sbin/telnetd
+# /usr/sbin/httpd -h /usr/www/
+/bin/factoryreset /dev/freset
+
+# start the page cache/kmem cache cleanup timer in the kernel
+# echo 1 > /proc/sys/vm/drop-cache
+
+# when processes uses page-cache more than 30% of system memory,
+# lets force them to write
+# echo 20 > /proc/sys/vm/dirty_ratio
+
+# when the dirty pages cross more than 5% of sys memory,
+# kick in the pdflush
+# echo 5 > /proc/sys/vm/dirty_background_ratio
+
+#
+# LAN Bypass Daemon
+# 
+# bypd is generated and copied to rootfs only if OFFLOAD_LAN_BYPASS is enabled
+#
+if [ -f /sbin/bypd ];
+then
+/sbin/bypd $HSTIF &
+fi
+
+if [ -f /sbin/acfgd ];
+then
+/sbin/acfgd &
+fi

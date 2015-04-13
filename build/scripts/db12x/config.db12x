@@ -1,0 +1,357 @@
+#
+# Copyright (c) 2013 Qualcomm Atheros, Inc.
+#
+# Permission to use, copy, modify, and/or distribute this software for any
+# purpose with or without fee is hereby granted, provided that the above
+# copyright notice and this permission notice appear in all copies.
+# 
+# THE SOFTWARE IS PROVIDED "AS IS" AND THE AUTHOR DISCLAIMS ALL WARRANTIES
+# WITH REGARD TO THIS SOFTWARE INCLUDING ALL IMPLIED WARRANTIES OF
+# MERCHANTABILITY AND FITNESS. IN NO EVENT SHALL THE AUTHOR BE LIABLE FOR
+# ANY SPECIAL, DIRECT, INDIRECT, OR CONSEQUENTIAL DAMAGES OR ANY DAMAGES
+# WHATSOEVER RESULTING FROM LOSS OF USE, DATA OR PROFITS, WHETHER IN AN
+# ACTION OF CONTRACT, NEGLIGENCE OR OTHER TORTIOUS ACTION, ARISING OUT OF
+# OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
+#
+
+# Set the toolchain path
+export TOOLCHAIN=buildroot-2009.08
+export TOOLPREFIX=mips-linux-uclibc-
+export TOOLARCH=build_mips/staging_dir/usr
+export UBOOT_GCC_4_3_3_EXTRA_CFLAGS=-fPIC
+
+export VOIPDIR=$(TOPDIR)/apps/gateway/services/phone
+
+export KERNEL=mips-linux-2.6.31
+export KERNELVER=2.6.31
+export KERNELTARGET=vmlinux.bin
+export COMPRESSKERNEL=y
+export KERNELARCH=mips
+export CONFIG_MIPS_74K_KERNEL_OPTIMIZATION=1
+
+ifeq ($(BOOT_FROM_NAND),1) #{
+# should be multiple of 128k
+export TARGETFSSIZE=4194304
+export ATH_CAL_NAND_FLASH=1
+export ATH_CAL_NAND_PARTITION="caldata"
+else #}{
+ifeq ($(ATH_DUAL_FLASH),1) #{
+export TARGETFSSIZE=5242880
+export ATH_CAL_NAND_FLASH=1
+export ATH_CAL_NAND_PARTITION="caldata"
+else #}{
+export TARGETFSSIZE=2818048
+endif #}
+endif #}
+
+ifeq ($(BUILD_CONFIG),_mi124)
+export COMPRESSED_UBOOT=1
+export FLASH_SIZE=4
+export TARGETFSSIZE=3080192
+endif
+
+ifeq ($(BUILD_CONFIG),_ap123)
+export COMPRESSED_UBOOT=1
+export FLASH_SIZE=4
+export TARGETFSSIZE=3080192
+export BUILD_OPTIMIZED=y
+endif
+
+ifeq ($(BUILD_CONFIG),_ap123_hwaccel)
+export COMPRESSED_UBOOT=1
+export FLASH_SIZE=4
+export TARGETFSSIZE=3080192
+export BUILD_OPTIMIZED=y
+export REMOVE_PKT_LOG=1
+endif
+
+ifeq ($(BUILD_CONFIG),_powercloud)
+export TARGETFSSIZE=3014656
+endif
+
+export BUSYBOX=busybox-1.01
+export WIRELESSTOOLS=wireless_tools.29
+export WIRELESSTOOLSLIB=libiw.so.29
+
+ifeq ($(USE_GCC_4_5_1), y)
+export TOOLCHAIN=gcc-4.5.1
+export ENABLE_DSP_ASE=y
+endif
+
+ifeq ($(BUILD_WLAN_PBO_DATA),y)
+export GCOV_KERNEL_ENABLE=y
+endif
+
+#DEFINE AH_CAL_IN_FLASH_PCI to indicate CALDATA is read from flash thr' PCI bus.
+#DEFINE AH_CAL_IN_FLASH_AHB to indicate CALDATA is read from flash thr' AHB bus
+#DO NOT DEFINE AH_CAL_IN_FLASH if bus type is dual.
+
+ifeq ($(BUILD_CONFIG),_ap123)
+export BUS=AHB
+export AH_CAL_IN_FLASH=1
+export AH_CAL_LOCATIONS=0xbfff0000
+export AH_CAL_RADIOS=1
+export AP_TYPE=single
+export JUMPSTART_GPIO=21
+export ATH_SUPPORT_DFS=1
+export AP_USB_LED_GPIO=11
+export AH_SUPPORT_KITE_ANY=0
+export AH_SUPPORT_KITE_10=0
+export AH_SUPPORT_KITE_12=0
+export AH_SUPPORT_KIWI_10=0
+export AH_SUPPORT_KIWI_ANY=0
+export AH_SUPPORT_KIWI_11=0
+export ATH_NO_5G_SUPPORT=1
+export ATH_SUPPORT_DFS=0
+export ATH_GMAC_TXQUEUELEN=500
+else
+export AH_SUPPORT_KITE_ANY=1
+export AH_SUPPORT_KITE_10=1
+export AH_SUPPORT_KITE_12=1
+export AH_SUPPORT_KIWI_10=1
+export AH_SUPPORT_KIWI_ANY=1
+export AH_SUPPORT_KIWI_11=1
+export ATH_SUPPORT_DFS=1
+
+export BUS=dual
+#export BUS=AHB
+export AP_TYPE=dual
+#export AP_TYPE=single
+#export AH_CAL_IN_FLASH_PCI=1
+export AH_CAL_RADIOS_PCI=1
+
+ifeq ($(ATH_CAL_NAND_FLASH),1) #{
+export AH_CAL_LOCATIONS_PCI=0x4000
+else #}{
+export AH_CAL_LOCATIONS_PCI=0xbfff4000
+endif
+export AH_CAL_IN_FLASH_AHB=1
+export AH_CAL_RADIOS_AHB=1
+ifeq ($(ATH_CAL_NAND_FLASH),1) #{
+export AH_CAL_LOCATIONS_AHB=0x0
+else #}{
+export AH_CAL_LOCATIONS_AHB=0xbfff0000
+endif
+export JUMPSTART_GPIO=16
+export AP_USB_LED_GPIO=11
+endif
+
+export MADWIFITARGET=mipsisa32-be-elf
+export FUSIONTARGET=mipsisa32-be-elf
+export TARGETARCH=mipsisa32-be-elf
+
+ifeq ($(CONFIG_I2S),1)
+export ATH_WASP_I2S=1
+export ATH_SUPPORT_LED=0
+else
+export ATH_SUPPORT_LED=1
+# To differentiate Customer specific GPIO mappings.
+# lmac/ath_dev/ath_led.h
+export ATH_LED_CUSTOMER=CUSTOMER_ATHEROS_WASP
+export AP_READY_LED_GPIO=14
+export WPS_LED_GPIO_PIN=15
+endif
+export GPIO_PIN_FUNC_0=0
+export GPIO_PIN_FUNC_1=0
+export GPIO_PIN_FUNC_2=0
+
+# Ethernet defines
+
+export ATH_GMAC_AR934x=1
+
+ifeq ($(BUILD_CONFIG),_ap123)
+export ATH_PHY_SWAP=1
+else
+#To build hostapd 0.8.0 version for db12x and mi124
+export BUILD_ATHR_HOSTAP=1
+endif
+
+export ATH_GMAC_RX_TASKLET=1
+ifeq ($(ETH_CONFIG),_s27)
+export ATH_GMAC_RX_PKT_CNT=16
+else
+export ATH_GMAC_RX_PKT_CNT=100
+endif
+export ATH_GMAC_DESC_SRAM=0
+
+export ATH_GMAC1_RXFCTL=1
+export ATH_GMAC1_TXFCTL=1
+
+export ATH_GMAC0_RXFCTL=1
+export ATH_GMAC0_TXFCTL=1
+
+ifeq ($(BUILD_CONFIG),_ap123)
+export ATH_GMAC0_TX_CNT=40
+export ATH_GMAC1_TX_CNT=40
+else
+export ATH_GMAC0_TX_CNT=128
+export ATH_GMAC1_TX_CNT=128
+endif
+
+export ATH_GMAC0_RX_CNT=128
+export ATH_GMAC1_RX_CNT=128
+
+export ATH_GMAC_HW_QOS=0
+
+export ATH_GMAC_GE0_IS_CONNECTED=1
+export ATH_GMAC_GE1_IS_CONNECTED=1
+
+export ATH_GMAC_LEN_PER_TX_DS=1536
+export ATH_GMAC_LOCATION=0xbfff0000
+
+export ATH_GMAC0_RGMII=0
+export ATH_GMAC0_GMII=0
+export ATH_GMAC0_MII=0
+
+export ATH_GMAC1_RGMII=0
+export ATH_GMAC1_GMII=0
+export ATH_GMAC1_MII=0
+
+export ATH_SWITCH_ONLY_MODE=0
+export ETH_CONFIG=_s27
+
+ifeq ($(ETH_CONFIG2),_s17)
+export ATH_GMAC_SUPPORT_DUAL_PHY=1
+export ETH_CONFIG2=_s17
+endif
+
+ifndef 11AC_OFFLOAD
+export 11AC_OFFLOAD=0
+endif
+
+ifneq ($(ETH_CONFIG),_s27)
+ifneq ($(11AC_OFFLOAD), 1) 
+export BUILD_EXT=$(ETH_CONFIG)$(ETH_CONFIG2)
+else
+export BUILD_EXT=_11ac_offload$(ETH_CONFIG)$(ETH_CONFIG2)
+endif
+endif
+
+# For S17 H/W Accelerator
+ifeq ($(ETH_CONFIG),_s17_hwaccel)
+export BUILD_CONFIG=_routing
+endif
+
+# For db12x S27 H/W Accelerator
+ifeq ($(BUILD_CONFIG),_hwaccel)
+export ATH_GMAC_HW_ACL=1
+export ATH_GMAC_HW_NAT=1
+endif
+
+ifeq ($(ETH_CONFIG),_s27)
+export ATH_GMAC_RX_PKT_CNT=16
+else
+export ATH_GMAC_RX_PKT_CNT=100
+endif
+
+# For ap123 S27 H/W Accelerator
+ifeq ($(BUILD_CONFIG),_ap123_hwaccel)
+export ATH_GMAC_HW_ACL=1
+export ATH_GMAC_HW_NAT=1
+endif
+
+export BUILD_WPA2=y
+#To build hostapd 0.8.0 version
+export BUILD_ATHR_HOSTAP=1
+export BUILD_UMAC=1
+
+export ATH_SUPPORT_VLAN=1
+
+ifeq ($(BUILD_CONFIG),_ap123)
+export ATH_RXBUF=128
+export ATH_TXBUF=256
+else
+export ATH_RXBUF=512
+export ATH_TXBUF=540
+endif
+
+ifeq ($(BUILD_CONFIG),_ap123)
+export ATH_GPIOPIN_ANTCHAIN0=0
+export ATH_GPIOPIN_ANTCHAIN1=1
+export ATH_GPIOPIN_ANTCHAIN2=0
+
+export ATH_GPIOFUNC_ANTCHAIN0=0x4b
+export ATH_GPIOFUNC_ANTCHAIN1=0x4c
+export ATH_GPIOFUNC_ANTCHAIN2=0
+export UMAC_SUPPORT_SMARTANTENNA=1
+export ATH_SMARTANTENNA_DISABLE_JTAG=1
+export SA_DEFAULT_ANTENNA=1
+endif
+
+ifeq ($(BUILD_WPA2),y)
+export ATH_WPS_IE=1
+else
+export ATH_WPS_IE=0
+endif
+
+ifeq ($(BUILD_SAMBA),y)
+export SAMBA_MIPS_74K_CFLAGS=-funit-at-a-time -Os -pipe -march=74kc -mtune=74kc
+#Populate the utilities to be removed
+sbin_list1=sbin/802* sbin/apst* sbin/ath* sbin/ifr* sbin/iwe*
+sbin_list2=sbin/iwsp* sbin/iwli* sbin/radar* sbin/iwge* sbin/pktl*
+samba_list=usr/local/bin/* usr/local/sbin/nmb* usr/local/sbin/smb*nt
+export INSTALL_BLACKLIST="usr/bin/gdb* $(sbin_list1) $(sbin_list2) $(samba_list)"
+endif
+
+export KBUILD_MODPOST_WARN=y
+export JUMPSTART_GPIO=16
+export ATH_SUPPORT_TIDSTUCK_WAR=1
+export ATH_SUPPORT_KEYPLUMB_WAR=1
+
+#Enable profiling
+#Generic profiling code
+export QCA_PERF_PROFILING=0
+#Profiling for MIP74K architecture
+export QCA_MIPS74K_PERF_PROFILING=0
+
+ifneq ($(11AC_OFFLOAD), 1)
+export AH_CAL_IN_FLASH_PCI=1    
+endif
+
+# 0: 128B - default, 1: 256B, 2: 64B
+#export ATH_OL_11AC_DMA_BURST=0
+#export ATH_OL_11AC_MAC_AGGR_DELIM=0
+
+# For building oprofile
+ifeq ($(BUILD_PROFILING),y)
+export BUILD_OPROFILE_74K=y
+export OPROFILE_ROOT=$(TOPDIR)/apps/profiling/oprofile-74k
+export OPROFILE_LIBS=$(OPROFILE_ROOT)/libs
+export OPROFILE_UTILS=$(OPROFILE_ROOT)/utils
+export OPROFILE_INCLUDES=$(OPROFILE_ROOT)/includes
+BUILD_LIBRARYOPT := n
+else
+export BUILD_OPROFILE_74k=n
+endif
+
+# S/W retry mechanism (in addition to H/W retries) +
+# TID queue pause/unpause and ps-poll handling in LMAC
+export ATH_SWRETRY=1
+# ATH_SWRETRY_MODIFY_DSTMASK enables HW optimization to filter pkts on
+# failures.
+export ATH_SWRETRY_MODIFY_DSTMASK=0
+export AH_SUPPORT_WASP=1
+export ATH_SUPPORT_IBSS=1
+export ATH_DEBUG=1
+export ATH_GEN_RANDOMNESS=1
+
+#####################################
+#wlan configs
+WLAN_DIR=../drivers/wlan_modules
+WLAN_CONFIG_FILE=$(WLAN_DIR)/os/linux/configs/.config.wlan.all
+
+#full feature profile is default
+$(shell cat $(WLAN_DIR)/os/linux/configs/config.wlan.full > $(WLAN_CONFIG_FILE))
+#enable perf for every build other than WRAP
+#ifeq ($(WLAN_BUILD_TYPE),perf)
+ifneq ($(CONFIG_TYPE),wrap)
+    $(shell cat $(WLAN_DIR)/os/linux/configs/config.wlan.perf > $(WLAN_CONFIG_FILE))
+endif
+
+$(shell sed -i 's/^/export &/g' $(WLAN_CONFIG_FILE))
+#include the wlan options
+include $(WLAN_CONFIG_FILE)
+#Disable ATH_OL_11AC_DMA_BURST for DB120 board.
+export ATH_OL_11AC_DMA_BURST=0
+export ATH_TxBF_DYNAMIC_LOF_ON_N_CHAIN_MASK=0
+

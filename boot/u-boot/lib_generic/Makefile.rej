@@ -1,0 +1,11 @@
+--- lib_generic/Makefile
++++ lib_generic/Makefile
+@@ -41,6 +41,8 @@
+ COBJS-y += string.o
+ COBJS-y += vsprintf.o
+ COBJS-y += zlib.o
++COBJS-y += LzmaDecode.o
++COBJS-y += LzmaWrapper.o
+ 
+ COBJS	:= $(COBJS-y)
+ SRCS 	:= $(COBJS:.o=.c)

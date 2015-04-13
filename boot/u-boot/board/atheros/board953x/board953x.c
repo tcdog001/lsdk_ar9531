@@ -105,6 +105,22 @@ void ath_gpio_config(void)
 	/* Turn off JUMPST_LED and 5Gz LED during bootup */
 	ath_reg_rmw_set(GPIO_OE_ADDRESS, (1 << 15));
 	ath_reg_rmw_set(GPIO_OE_ADDRESS, (1 << 12));
+/*Begin:add by zhangsiyu for turn off lan led and reserved led 2015-3-17*/
+    /* Turn off gpio11 LED and gpio14 LED gpio17 LEDduring bootup */
+    ath_reg_rmw_clear(GPIO_OE_ADDRESS, (1 << 11));
+    ath_reg_rmw_set(GPIO_OUT_ADDRESS , (1 << 11));
+
+    ath_reg_rmw_clear(GPIO_OE_ADDRESS, (1 << 14));
+    ath_reg_rmw_set(GPIO_OUT_ADDRESS , (1 << 14));
+
+    ath_reg_rmw_clear(GPIO_OUT_FUNCTION4_ADDRESS, GPIO_OUT_FUNCTION4_ENABLE_GPIO_17_MASK);
+    ath_reg_rmw_clear(GPIO_OE_ADDRESS, (1 << 17));
+    ath_reg_rmw_set(GPIO_OUT_ADDRESS , (1 << 17));
+
+ /*End:add by zhangsiyu for turn off lan led and reserved led 2015-3-17*/
+    
+
+
 }
 
 int

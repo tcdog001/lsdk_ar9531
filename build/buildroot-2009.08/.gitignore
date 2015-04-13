@@ -2,7 +2,6 @@
 /project_*
 /toolchain_*
 /binaries
-/dl
 /.auto.deps
 /.config.cmd
 /.config.old

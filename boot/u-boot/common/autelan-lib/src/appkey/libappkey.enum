@@ -1,0 +1,6 @@
+*		debug		ok		1
+*		debug		error 		2
+*		debug		trace 		4
+*		debug		test 		8
+*		debug 		consume		16
+
